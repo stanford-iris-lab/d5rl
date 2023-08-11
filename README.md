@@ -119,3 +119,52 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false python3 -u train_offline_pixels_randomizedki
 --seed 0 
 ```
 
+### WidowX Sorting Environments
+
+The script found in examples/run_bc_widowx.sh can be used to launch Imitation Learning on the WidowX task. 
+```bash
+cd ./examples
+conda activate d5rl
+
+unset LD_LIBRARY_PATH
+unset LD_PRELOAD
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.mujoco/mujoco210/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia-000
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/nvidia
+export MUJOCO_GL="egl"
+export KITCHEN_DATASETS=/PATH/TO/datasets/randomized_kitchen
+export STANDARD_KITCHEN_DATASETS=/PATH/TO/datasets/standard_kitchen/kitchen_demos_multitask_lexa_view_and_wrist_npz
+export RELAY_POLICY_REPO="./benchmark/domains/relay-policy-learning/adept_envs"
+
+datasets=(sorting sorting_pickplace)
+actor_lrs=(0.0001)
+
+for dataset in ${datasets[@]}; do
+for actor_lr in ${actor_lrs[@]}; do
+command="XLA_PYTHON_CLIENT_PREALLOCATE=false python3 examples/launch_train_widowx_bc.py \
+--prefix $prefix \
+--wandb_project ${proj_name} \
+--batch_size 256 \
+--encoder impala  \
+--actor_lr $actor_lr \
+--dataset $dataset \
+--seed $seed \
+--offline_finetuning_start -1 \
+--online_start 10000000000000 \
+--max_steps  10000000000000 \
+--eval_interval 1000 \
+--log_interval 1000 \
+--eval_episodes 50 \
+--checkpoint_interval 10000000000000"
+
+echo $command
+
+if [ $dry_run -eq 0 ]; then
+    eval $command &
+    sleep 100
+fi
+
+done
+done
+```

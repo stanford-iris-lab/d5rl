@@ -11,19 +11,19 @@ from flax.core.frozen_dict import FrozenDict
 from flax.training.train_state import TrainState
 
 from jaxrl2.agents.agent import Agent
-from jaxrl2.agents.drq.augmentations import batched_random_crop
+from jaxrl2.agents.kitchen_agents.drq.augmentations import batched_random_crop
 from jaxrl2.agents.sac.actor_updater import update_actor
 from jaxrl2.agents.sac.critic_updater import update_critic
 from jaxrl2.agents.sac.temperature import Temperature
 from jaxrl2.agents.sac.temperature_updater import update_temperature
-from jaxrl2.data.dataset import DatasetDict
+from jaxrl2.data.kitchen_data.dataset import DatasetDict
 # from jaxrl2.networks.encoders import D4PGEncoder, ResNetV2Encoder
 # from jaxrl2.networks.encoders import D4PGEncoderGroups ###===### ###---###
-from jaxrl2.networks.encoders import D4PGEncoder
-from jaxrl2.networks.normal_tanh_policy import NormalTanhPolicy
+from jaxrl2.networks.kitchen_networks.encoders import D4PGEncoder
+from jaxrl2.networks.kitchen_networks.normal_tanh_policy import NormalTanhPolicy
 # from jaxrl2.networks.pixel_multiplexer import PixelMultiplexer
-from jaxrl2.networks.pixel_multiplexer import PixelMultiplexer
-from jaxrl2.networks.values import StateActionEnsemble
+from jaxrl2.networks.kitchen_networks.pixel_multiplexer import PixelMultiplexer
+from jaxrl2.networks.kitchen_networks.values import StateActionEnsemble
 from jaxrl2.types import Params, PRNGKey
 from jaxrl2.utils.target_update import soft_target_update
 

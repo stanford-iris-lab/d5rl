@@ -347,6 +347,33 @@ def get_idql_config():
     return config
 
 
+def get_drq_config():
+    config = ml_collections.ConfigDict()
+
+    config.actor_lr = 3e-4
+    config.critic_lr = 3e-4
+    config.temp_lr = 3e-4
+
+    config.hidden_dims = (256, 256)
+
+    config.cnn_features = (32, 64, 128, 256)
+    config.cnn_filters = (3, 3, 3, 3)
+    config.cnn_strides = (2, 2, 2, 2)
+    config.cnn_padding = "VALID"
+    config.latent_dim = 50
+    config.encoder = "d4pg"
+
+    config.discount = 0.99
+
+    config.tau = 0.005
+    config.init_temperature = 0.1
+    config.target_entropy = None
+    config.backup_entropy = True
+    config.critic_reduction = "mean"
+
+    return config
+
+
 def get_config(config_string):
     possible_structures = {
         "bc": ml_collections.ConfigDict(
@@ -372,6 +399,9 @@ def get_config(config_string):
         ),
         "idql": ml_collections.ConfigDict(
             {"model_constructor": "PixelIDQLLearner", "model_config": get_idql_config()}
+        ),
+        "drq": ml_collections.ConfigDict(
+            {"model_constructor": "DrQLearner", "model_config": get_drq_config()}
         ),
     }
 

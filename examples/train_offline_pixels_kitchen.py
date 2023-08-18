@@ -24,6 +24,7 @@ from jaxrl2.agents.kitchen_agents import PixelCQLLearnerEncoderSepParallel
 from jaxrl2.agents.kitchen_agents import PixelCQLLearnerEncoderSep
 from jaxrl2.agents.kitchen_agents import PixelTD3BCLearner
 from jaxrl2.agents.kitchen_agents import PixelIDQLLearner
+from jaxrl2.agents.kitchen_agents import DrQLearner
 
 import jaxrl2.wrappers.combo_wrappers as wrappers
 from jaxrl2.wrappers.frame_stack import FrameStack
@@ -84,7 +85,7 @@ flags.DEFINE_string('camera_ids', "12", 'Eg: 0,1')
 import sys
 algname = sys.argv[sys.argv.index("--algorithm") + 1]
 print("algname:", algname)
-assert algname in ["bc", "iql", "cql_slow", "cql", "calql", "td3bc", "ddpm_bc", "idql"], f"algname: {algname}"
+assert algname in ["bc", "iql", "cql_slow", "cql", "calql", "td3bc", "ddpm_bc", "idql", "drq"], f"algname: {algname}"
 
 config_flags.DEFINE_config_file(
     'config',

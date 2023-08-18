@@ -18,7 +18,9 @@ See instructions for other versions of CUDA [here](https://github.com/google/jax
 
 Download the Standard Franka Kitchen data with this command:
 ```bash
-gsutil -m cp -r "gs://d4rl2/KITCHEN_DATA/RPL_data" .
+mkdir /PATH/TO/datasets/standard_kitchen
+cd /PATH/TO/datasets/standard_kitchen
+gsutil -m cp -r "gs://d5rl_datasets/KITCHEN_DATA/kitchen_demos_multitask_lexa_view_and_wrist_npz" .
 ```
 Then set 
 ```bash
@@ -27,7 +29,10 @@ export STANDARD_KITCHEN_DATASETS=/PATH/TO/datasets/standard_kitchen/kitchen_demo
 
 Download the Randomized Franka Kitchen data with this command: 
 ```bash
-gsutil -m cp -r "gs://d4rl2/KITCHEN_DATA/expert_demos" .
+mkdir /PATH/TO/datasets/randomized_kitchen
+cd /PATH/TO/datasets/randomized_kitchen
+gsutil -m cp -r "gs://d5rl_datasets/KITCHEN_DATA/expert_demos" .
+gsutil -m cp -r "gs://d5rl_datasets/KITCHEN_DATA/play_data" .
 ```
 Then set 
 ```bash

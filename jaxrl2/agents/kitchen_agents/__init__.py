@@ -10,3 +10,4 @@ from jaxrl2.agents.kitchen_agents.pixel_idql.pixel_idql_learner import PixelIDQL
 from jaxrl2.agents.kitchen_agents.cql_encodersep import PixelCQLLearnerEncoderSep
 from jaxrl2.agents.kitchen_agents.cql_encodersep_parallel import PixelCQLLearnerEncoderSepParallel
 from jaxrl2.agents.kitchen_agents.pixel_td3bc import PixelTD3BCLearner
+from jaxrl2.agents.kitchen_agents.drq import DrQLearner

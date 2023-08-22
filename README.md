@@ -47,6 +47,18 @@ export KITCHEN_DATASETS=/PATH/TO/datasets/randomized_kitchen
 
 ## Running the experiments
 
+To replicate the results from the paper, please see the following locations for examples of launching experiments
+
+**Standard Kitchen Environment**: `./examples/kitchen_launch_scripts/standardkitchen`
+
+**Randomized Kitchen Environment**: `./examples/kitchen_launch_scripts/randomizedkitchen`
+
+**WidowX Sorting Environments**: `./examples/run_bc_widowx.sh`
+
+
+
+<!-- ## Running the experiments
+
 To replicate the results from the paper, please see the following examples:
 
 ### Standard Franka Kitchen 
@@ -176,4 +188,4 @@ fi
 
 done
 done
-```
+``` -->

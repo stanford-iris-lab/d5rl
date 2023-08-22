@@ -114,7 +114,6 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false python3 -u train_offline_pixels_randomizedki
 --project bench_randomizedkitchen_debug3 \
 --algorithm iql \
 --proprio=true \
---description proprio \
 --eval_episodes 100 \
 --eval_interval 50000 \
 --online_eval_interval 50000 \

@@ -45,6 +45,18 @@ Then set
 export KITCHEN_DATASETS=/PATH/TO/datasets/randomized_kitchen
 ```
 
+Data download for the WidowX Sorting environments is handled internally in the environment code. 
+
+Download the data for the A1 environments with these commands:
+```bash
+mkdir /PATH/TO/datasets/a1
+cd /PATH/TO/datasets/a1
+gsutil -m cp -r "gs://d5rl_datasets/a1/a1_extrapolate_above.zip"
+gsutil -m cp -r "gs://d5rl_datasets/a1/a1_hiking.zip"
+gsutil -m cp -r "gs://d5rl_datasets/a1/a1_interpolate.zip" .
+```
+
+
 ## Running the experiments
 
 To replicate the results from the paper, please see the following locations for examples of launching experiments

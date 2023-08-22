@@ -74,7 +74,6 @@ XLA_PYTHON_CLIENT_PREALLOCATE=false python3 -u train_offline_pixels_kitchen.py \
 --project test_standard_kitchen \
 --algorithm iql \
 --proprio=true \
---description proprio \
 --eval_episodes 50 \
 --eval_interval 10_000 \
 --online_eval_interval 10_000 \

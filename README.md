@@ -51,8 +51,8 @@ Download the data for the A1 environments with these commands:
 ```bash
 mkdir /PATH/TO/datasets/a1
 cd /PATH/TO/datasets/a1
-gsutil -m cp -r "gs://d5rl_datasets/a1/a1_extrapolate_above.zip"
-gsutil -m cp -r "gs://d5rl_datasets/a1/a1_hiking.zip"
+gsutil -m cp -r "gs://d5rl_datasets/a1/a1_extrapolate_above.zip" .
+gsutil -m cp -r "gs://d5rl_datasets/a1/a1_hiking.zip" .
 gsutil -m cp -r "gs://d5rl_datasets/a1/a1_interpolate.zip" .
 ```
 

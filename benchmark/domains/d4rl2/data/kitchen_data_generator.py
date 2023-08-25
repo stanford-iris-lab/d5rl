@@ -60,6 +60,12 @@ def KitchenDataGenerator(datasets_urls: list,
                 #         episode['ee_forces'][t]],
                 #         axis=-1)
 
+                if env.env.env.pretrained_encoder is not None:
+                    # transition['observations']['pretrained_representations'] = env.env.env.pretrained_encoder(frames[0])
+                    transition['observations']['pretrained_representations'] = episode["pretrained_representations"][t]
+                # else:
+                #     transition['observations']['pretrained_representations'] = np.zeros((2,))
+
                 transition['actions'] = np.clip(episode['action'][t + 1], -0.99, 0.99)
                 transition['rewards'] = episode['reward'][t + 1]
                 transition["mc_returns"] = episode['mc_returns'][t + 1]
@@ -79,6 +85,9 @@ def KitchenDataGenerator(datasets_urls: list,
                 #         episode['ee_qp'][t + 1],
                 #         episode['ee_forces'][t + 1]],
                 #         axis=-1)
+                if env.env.env.pretrained_encoder is not None:
+                    # transition['next_observations']['pretrained_representations'] = env.env.env.pretrained_encoder(frames[0])
+                    transition['next_observations']['pretrained_representations'] = episode["pretrained_representations"][t + 1]
 
                 transition['masks'] = 0.0
                 transition['dones'] = 0.0

@@ -13,6 +13,7 @@ class PixelMultiplexer(nn.Module):
     network: nn.Module
     latent_dim: int
     stop_gradient: bool = False
+    use_pretrained_representations: bool = False 
 
     @nn.compact
     def __call__(
@@ -22,11 +23,18 @@ class PixelMultiplexer(nn.Module):
         training: bool = False,
     ) -> jnp.ndarray:
         observations = FrozenDict(observations)
-        assert (
-            len(observations.keys()) <= 2
-        ), "Can include only pixels and states fields."
 
-        x = self.encoder(observations["pixels"])
+        # assert (
+        #     len(observations.keys()) <= 2
+        # ), "Can include only pixels and states fields."
+
+        for key in observations.keys():
+            assert key in ["pixels", "states", "pretrained_representations"]
+
+        if self.use_pretrained_representations:
+            x = observations["pretrained_representations"]
+        else:
+            x = self.encoder(observations["pixels"])
 
         """
         resnet_34_v1

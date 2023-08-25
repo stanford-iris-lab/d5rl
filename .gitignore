@@ -135,6 +135,7 @@ dmypy.json
 jupyter_notebooks/
 examples/scratch.py
 examples/scripts*
+examples/cache
 examples/count_transitions.py
 examples/results*
 finetuning_benchmark/misc_utils/

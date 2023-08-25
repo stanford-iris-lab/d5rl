@@ -1,5 +1,7 @@
 """Implementations of algorithms for continuous control."""
 
+
+
 from typing import Dict, Optional, Sequence, Tuple, Union
 
 import jax
@@ -46,6 +48,109 @@ def _update_jit(
     return rng, new_actor, actor_info
 
 
+# import torch
+# from torchvision.io import read_image
+
+# from voltron import instantiate_extractor, load
+
+# import numpy as np 
+# import cv2 
+# from copy import deepcopy 
+
+# class PretrainedEncoderWrapper:
+    # def __init__(self, encoder_name):
+    #     device = "cuda" if torch.cuda.is_available() else "cpu"
+    #     vcond, preprocess = load(encoder_name, device=device, freeze=True)
+
+    #     img = preprocess(read_image("peel-carrot-initial.png"))[None, ...].to(device)
+    #     print("img.shape:", img.shape)
+        
+
+    #     with torch.no_grad():
+    #         if "v-cond" in encoder_name:
+    #             visual_features = vcond(img, mode="visual")  # Vision-only features (no language)
+    #         else:
+    #             visual_features = vcond(img)  # Vision-only features (no language)
+
+    #     vector_extractor = instantiate_extractor(vcond, n_latents=1)().to(device)
+    #     print("vector_extractor(visual_features).shape:", vector_extractor(visual_features).shape)
+
+    #     self._vcond = vcond
+    #     self._preprocess = preprocess
+    #     self._imsize = 224
+    #     self._encoder_name = encoder_name
+    #     self._vector_extractor = vector_extractor
+    #     self._device = device
+
+    # def __call__(self, pixels):
+    #     pixels = deepcopy(pixels)
+
+    #     # if len(pixels.shape) == 4:
+    #     #     pixels_batched = np.zeros((9, pixels.shape[0], pixels.shape[1], 3))
+
+    #     #     for i in range(3):
+    #     #         for j in range(3):
+    #     #             pixels_batched[i*3 + j] = pixels[..., i*3:i*3+3, j]
+
+    #     #     # arranges them in [cam0-frame0, cam0-frame1, cam0-frame2, cam1-frame0, cam1-frame1, cam1-frame2, cam2-frame0, cam2-frame1, cam2-frame2]
+    #     #     assert np.array_equal(pixels_batched[0], pixels[..., :3, 0])
+    #     #     assert np.array_equal(pixels_batched[-1], pixels[..., 6:, -1])
+    #     #     assert np.array_equal(pixels_batched[2], pixels[..., :3, -1])
+    #     #     assert np.array_equal(pixels_batched[5], pixels[..., 3:6, -1])
+
+    #     #     pixels_batched = pixels_batched.transpose((0, 3, 1, 2))
+    #     #     pixels_batched = torch.tensor(pixels_batched)
+    #     #     img = self._preprocess(pixels_batched)[None, ...].to(device)
+
+    #     #     with torch.no_grad():
+    #     #         if "v-cond" in self._encoder_name:
+    #     #             visual_features = self._vcond(img, mode="visual")  # Vision-only features (no language)
+    #     #         else:
+    #     #             visual_features = self._vcond(img)  # Vision-only features (no language)
+            
+    #     #     features = self._vector_extractor(visual_features) # (batch, 384)
+    #     #     features = features.view(-1)
+
+    #     # else:
+    #     #     import pdb; pdb.set_trace()
+
+    #     no_batch_dim = False
+    #     if len(pixels.shape) == 4:
+    #         pixels = pixels[None, ...]
+    #         no_batch_dim = True
+
+    #     embed_dim = 384
+
+    #     features_allcams = torch.zeros((pixels.shape[0], embed_dim*3), device=self._device)
+
+    #     for cam_no in range(3):
+    #         pixels_cam = deepcopy(pixels[..., cam_no*3:cam_no*3+3, 0]
+
+    #         # pixels_cam = pixels_cam.transpose((0, -1, -3, -2)) 
+    #         pixels_cam = pixels_cam.transpose((0, 3, 1, 2)) 
+            
+    #         pixels_cam = torch.tensor(pixels_cam)
+    #         img = self._preprocess(pixels_cam).to(self._device)
+
+    #         with torch.no_grad():
+    #             if "v-cond" in self._encoder_name:
+    #                 visual_features = self._vcond(img, mode="visual")  # Vision-only features (no language)
+    #             else:
+    #                 visual_features = self._vcond(img)  # Vision-only features (no language)
+            
+    #         features = self._vector_extractor(visual_features) # (batch, 384)
+            
+    #         features_allcams[:, cam_no*embed_dim:cam_no*embed_dim+embed_dim] = features
+
+    #     features_allcams = features_allcams.detach().cpu().numpy()
+
+    #     if no_batch_dim:
+    #         assert features_allcams.shape[0] == 1
+    #         features_allcams = np.squeeze(features_allcams)
+
+    #     return features_allcams
+import voltron
+
 class PixelBCLearner(Agent):
     def __init__(
         self,
@@ -79,6 +184,8 @@ class PixelBCLearner(Agent):
         rng = jax.random.PRNGKey(seed)
         rng, actor_key = jax.random.split(rng)
 
+        use_pretrained_representations = False
+
         # encoder_defs = []
         # for i in range(cnn_groups):
         if encoder == "d4pg":
@@ -98,6 +205,9 @@ class PixelBCLearner(Agent):
                                    use_multiplicative_cond=use_multiplicative_cond,
                                    use_spatial_learned_embeddings=use_spatial_learned_embeddings,
                                    num_spatial_blocks=8,)
+        elif encoder in voltron.available_models():
+            encoder_def = None
+            use_pretrained_representations = True
             # encoder_defs.append(encoder_def)
         # encoder_def = ResNet34(norm=encoder_norm, use_spatial_softmax=use_spatial_softmax, softmax_temperature=softmax_temperature,
         #                        use_multiplicative_cond=use_multiplicative_cond,
@@ -115,9 +225,7 @@ class PixelBCLearner(Agent):
         # actor_def = PixelMultiplexerMultiple(
         #     encoders=encoder_defs, network=policy_def, latent_dim=latent_dim
         # )
-        actor_def = PixelMultiplexer(
-            encoder=encoder_def, network=policy_def, latent_dim=latent_dim
-        )
+        actor_def = PixelMultiplexer(encoder=encoder_def, network=policy_def, latent_dim=latent_dim, use_pretrained_representations=use_pretrained_representations)
 
 
         actor_params = actor_def.init(actor_key, observations)["params"]

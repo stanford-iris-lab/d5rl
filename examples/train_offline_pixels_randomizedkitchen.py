@@ -1,3 +1,5 @@
+import torch
+
 import os
 import pickle
 import numpy as np
@@ -74,7 +76,68 @@ flags.DEFINE_float("discount", 0.99, "Take top N% trajectories.")
 flags.DEFINE_integer("im_size", 128, "Image size.")
 flags.DEFINE_boolean("use_wrist_cam", True, "Use the wrist cam?")
 flags.DEFINE_string('camera_ids', "12", 'Eg: 0,1')
+flags.DEFINE_integer("framestack", 3, "Image size.")
 
+# flags.DEFINE_string('pretrained_encoder', "none", 'Eg: 0,1')
+
+
+import torch
+from torchvision.io import read_image
+
+import voltron
+from voltron import instantiate_extractor, load
+
+import numpy as np 
+import cv2 
+
+class PretrainedEncoder:
+    def __init__(self, model_name):
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        vcond, preprocess = load(model_name, device=device, freeze=True)
+
+        img = preprocess(read_image("peel-carrot-initial.png"))[None, ...].to(device)
+        print("img.shape:", img.shape)
+        
+
+        with torch.no_grad():
+            if "v-cond" in model_name:
+                visual_features = vcond(img, mode="visual")  # Vision-only features (no language)
+            else:
+                visual_features = vcond(img)  # Vision-only features (no language)
+
+        vector_extractor = instantiate_extractor(vcond, n_latents=1)().to(device)
+        print("vector_extractor(visual_features).shape:", vector_extractor(visual_features).shape)
+
+        self._vcond = vcond
+        self._preprocess = preprocess
+        self._imsize = 224
+        self._model_name = model_name
+        self._vector_extractor = vector_extractor
+        self._device = device
+        self._embed_dim = vector_extractor(visual_features).squeeze().shape[0] * 3
+
+
+    def __call__(self, pixels):
+        pixels = pixels.copy()
+
+        pixels = np.stack([pixels[..., :3], pixels[..., 3:6], pixels[..., 6:]])
+
+        assert len(pixels.shape) == 4, f"pixels.shape: {pixels.shape}"
+
+        pixels = pixels.transpose((0, 3, 1, 2))
+        pixels = torch.tensor(pixels, device=self._device)
+        
+        img = self._preprocess(pixels).to(self._device)
+
+        with torch.no_grad():
+            if "v-cond" in self._model_name:
+                visual_features = self._vcond(img, mode="visual")  # Vision-only features (no language)
+            else:
+                visual_features = self._vcond(img)  # Vision-only features (no language)
+        
+        features = self._vector_extractor(visual_features) # (batch, 384)
+        features = features.view(-1)
+        return features.detach().cpu().numpy()
 
 
 import sys
@@ -122,9 +185,17 @@ def main(_):
 
     wandb.config.update(FLAGS)
 
-    env = make_env(FLAGS.task, FLAGS.ep_length, FLAGS.action_repeat, FLAGS.proprio, im_size=FLAGS.im_size, camera_ids=FLAGS.camera_ids, use_wrist_cam=FLAGS.use_wrist_cam)
+
+    if FLAGS.config.model_config.encoder in voltron.available_models():
+        pretrained_encoder = PretrainedEncoder(FLAGS.config.model_config.encoder)
+    else:
+        pretrained_encoder = None
+    
+
+
+    env = make_env(FLAGS.task, FLAGS.ep_length, FLAGS.action_repeat, FLAGS.proprio, im_size=FLAGS.im_size, camera_ids=FLAGS.camera_ids, use_wrist_cam=FLAGS.use_wrist_cam, framestack=FLAGS.framestack, pretrained_encoder=pretrained_encoder)
     env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=1)
-    eval_env = make_env(FLAGS.task, FLAGS.ep_length, FLAGS.action_repeat, FLAGS.proprio, im_size=FLAGS.im_size, camera_ids=FLAGS.camera_ids, use_wrist_cam=FLAGS.use_wrist_cam)
+    eval_env = make_env(FLAGS.task, FLAGS.ep_length, FLAGS.action_repeat, FLAGS.proprio, im_size=FLAGS.im_size, camera_ids=FLAGS.camera_ids, use_wrist_cam=FLAGS.use_wrist_cam, framestack=FLAGS.framestack, pretrained_encoder=pretrained_encoder)
 
     print('Environment Created')
     kwargs = dict(FLAGS.config.model_config)
@@ -246,6 +317,10 @@ def main(_):
             else:
                 mask = 0.0
 
+            if pretrained_encoder is not None:
+                import pdb; pdb.set_trace()
+                # Need to add pretrained representations to the online data
+
             transitions.append(dict(
                 observations=observation,
                 actions=action,
@@ -320,7 +395,7 @@ def main(_):
         agent.save_checkpoint(os.path.join(save_dir, "online_checkpoints"), i + FLAGS.max_gradient_steps, -1)
 
 
-def make_env(task, ep_length, action_repeat, proprio, im_size=128, camera_ids="0,1", use_wrist_cam=True):
+def make_env(task, ep_length, action_repeat, proprio, im_size=128, camera_ids="0,1", use_wrist_cam=True, framestack=3, pretrained_encoder=None):
     suite, task = task.split('_', 1)
 
     if "randomizedkitchen" in suite:
@@ -343,7 +418,8 @@ def make_env(task, ep_length, action_repeat, proprio, im_size=128, camera_ids="0
         env = gym.make("random_kitchen-v1",
                        tasks_to_complete=tasks_to_complete,
                        datasets=datasets,
-                       framestack=3)
+                       framestack=framestack,
+                       pretrained_encoder=pretrained_encoder)
 
         print("\nenv:", env)
         print("\nenv._max_episode_steps:", env._max_episode_steps)
@@ -359,32 +435,7 @@ def make_env(task, ep_length, action_repeat, proprio, im_size=128, camera_ids="0
         raise ValueError(f"Unsupported environment suite: \"{suite}\".")
     return env
 
-def load_episode(episode_file, task, tasks_list):
-    with open(episode_file, 'rb') as f:
-        episode = np.load(f, allow_pickle=True)
 
-        if tasks_list is None:
-            episode = {k: episode[k] for k in episode.keys() if k not in ['image_128'] and "metadata" not in k and "str" not in episode[k].dtype.name and episode[k].dtype != object}
-        else:
-            if "reward" in episode:
-                rewards = episode["reward"]
-            else:
-                rewards = sum([episode[f"reward {obj}"] for obj in tasks_list])
-
-            episode = {k: episode[k] for k in episode.keys() if k not in ['image_128'] and "metadata" not in k and "str" not in episode[k].dtype.name and episode[k].dtype != object and "init_q" not in k and "observation" not in k and "terminal" not in k and "goal" not in k}
-            episode["reward"] = rewards
-
-
-    # extra_image_camera_0_rgb
-    # extra_image_camera_1_rgb
-    # extra_image_camera_gripper_rgb
-
-        if "standardkitchen" in task:
-            keys = ["extra_image_camera_0_rgb", "extra_image_camera_1_rgb", "extra_image_camera_gripper_rgb"]
-            img = np.concatenate([episode[key] for key in keys], axis=-1)
-            episode["image"] = img
-
-    return episode
 
 
 if __name__ == '__main__':

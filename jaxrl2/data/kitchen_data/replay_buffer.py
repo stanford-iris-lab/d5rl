@@ -6,6 +6,10 @@ import numpy as np
 
 from jaxrl2.data.kitchen_data.dataset import Dataset, DatasetDict
 
+import collections
+
+import jax
+
 
 def _init_replay_dict(
     obs_space: gym.Space, capacity: int
@@ -71,3 +75,19 @@ class ReplayBuffer(Dataset):
 
         self._insert_index = (self._insert_index + 1) % self._capacity
         self._size = min(self._size + 1, self._capacity)
+
+    def get_iterator(self, queue_size: int = 2, sample_args: dict = {}):
+        # See https://flax.readthedocs.io/en/latest/_modules/flax/jax_utils.html#prefetch_to_device
+        # queue_size = 2 should be ok for one GPU.
+
+        queue = collections.deque()
+
+        def enqueue(n):
+            for _ in range(n):
+                data = self.sample(**sample_args)
+                queue.append(jax.device_put(data))
+
+        enqueue(queue_size)
+        while queue:
+            yield queue.popleft()
+            enqueue(1)

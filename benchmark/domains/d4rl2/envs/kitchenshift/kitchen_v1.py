@@ -80,6 +80,7 @@ class Kitchen_v1(gym.Env):
         init_perturb_robot_ratio=None,
         init_perturb_object_ratio=None,
         rng_type='legacy',
+        pretrained_encoder=None,
     ):
         if tasks_to_complete is not None:
             self.TASK_ELEMENTS = tasks_to_complete
@@ -133,6 +134,8 @@ class Kitchen_v1(gym.Env):
         #         f'<global offwidth="{height}" offheight="{width}" />',
         #     )
         #     # NOTE: if using larger render sizes, probably want to scale up shadow quality as well
+
+        self.pretrained_encoder = pretrained_encoder
 
         if self.noslip_off:
             self.model_xml = self.model_xml.replace(
@@ -251,6 +254,11 @@ class Kitchen_v1(gym.Env):
                 dtype=np.float32,
             )
 
+        if self.pretrained_encoder is not None:
+            obs_space['pretrained_representations'] = spaces.Box(low=-np.inf, high=np.inf, shape=(self.pretrained_encoder._embed_dim,), dtype=np.float32)
+        # else:
+        #     obs_space['pretrained_representations'] = spaces.Box(low=-np.inf, high=np.inf, shape=(2,), dtype=np.float32)
+        
         self.observation_space = spaces.Dict(obs_space)
 
     def _create_sim(self, xml_string):
@@ -481,9 +489,21 @@ class Kitchen_v1(gym.Env):
         for k, v in obs_dict.items():
             obs_dict[k] = v.astype(np.float32)
 
+        all_camera_images = []
+
         rgb = self.render(mode='rgb')
         for k, v in rgb.items():
             obs_dict[k] = v
+
+            all_camera_images.append(v)
+
+        if self.pretrained_encoder is not None:
+            all_camera_images = np.concatenate(all_camera_images, axis=-1)
+            pretrained_representations = self.pretrained_encoder(all_camera_images)
+            obs_dict["pretrained_representations"] = pretrained_representations
+        # else:
+        #     obs_dict["pretrained_representations"] = np.zeros((2,))
+
         return obs_dict
 
     def _get_task_goal(self):

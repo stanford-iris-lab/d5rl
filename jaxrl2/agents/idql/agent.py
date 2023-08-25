@@ -42,3 +42,4 @@ class Agent(struct.PyTreeNode):
             self.rng, self.actor.apply_fn, self.actor.params, observations
         )
         return np.asarray(actions), self.replace(rng=new_rng)
+

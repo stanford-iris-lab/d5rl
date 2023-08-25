@@ -1,3 +1,5 @@
+import torch
+
 import os
 import pickle
 import numpy as np
@@ -153,7 +155,7 @@ def main(_):
     print("Loading replay buffer")
     replay_buffer = MemoryEfficientReplayBuffer(env.observation_space, env.action_space, FLAGS.replay_buffer_size)
     replay_buffer.seed(FLAGS.seed)
-    replay_buffer_iterator = replay_buffer.get_iterator(sample_args={"batch_size": FLAGS.batch_size, "include_pixels": False})
+    replay_buffer_iterator = replay_buffer.get_iterator(sample_args={"batch_size": FLAGS.batch_size})
 
     DATADIR = os.environ.get('STANDARD_KITCHEN_DATASETS', None)
     print("DATADIR:", DATADIR)

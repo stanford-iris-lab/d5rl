@@ -45,7 +45,7 @@ class OfflineEnv(Wrapper):
         return self._dataset
 
 
-def make_env(task, tasks_to_complete, datasets: str = None, framestack=1):
+def make_env(task, tasks_to_complete, datasets: str = None, framestack=1, pretrained_encoder=None):
     if task == 'RPL_kitchen-v1':
         from benchmark.domains.d4rl2.envs.kitchen.KitchenRPL import KitchenRPL
         env = KitchenRPL(tasks_to_complete = tasks_to_complete)
@@ -54,7 +54,7 @@ def make_env(task, tasks_to_complete, datasets: str = None, framestack=1):
         env = Kitchen_v1(tasks_to_complete = tasks_to_complete)
     elif task == 'random_kitchen-v1':
         from benchmark.domains.d4rl2.envs.kitchenshift.randomized_kitchen import Randomized_Kitchen
-        env = Randomized_Kitchen(tasks_to_complete = tasks_to_complete)
+        env = Randomized_Kitchen(tasks_to_complete = tasks_to_complete, pretrained_encoder=pretrained_encoder)
     # env = FrameStack(KitchenImageConcatWrapper(env), num_stack=1)
     env = FrameStack(KitchenImageConcatWrapper(env), num_stack=framestack)
 

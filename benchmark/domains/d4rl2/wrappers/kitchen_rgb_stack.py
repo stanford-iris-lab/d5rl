@@ -20,6 +20,9 @@ class KitchenImageConcatWrapper(gym.Wrapper):
             dtype=np.uint8,
         )
 
+        if self.env.pretrained_encoder is not None:
+            obs_space["pretrained_representations"] = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(self.pretrained_encoder._embed_dim,), dtype=np.float32)
+
         self.observation_space = gym.spaces.Dict(obs_space)
 
     def reset(self, **kwargs):
@@ -31,6 +34,10 @@ class KitchenImageConcatWrapper(gym.Wrapper):
                                        axis=-1)
         obs['states'] = obs_dict['robot_qp']
 
+        obs['pretrained_representations'] = obs_dict['pretrained_representations']
+
+
+
         return obs
 
     def step(self, action):
@@ -41,6 +48,8 @@ class KitchenImageConcatWrapper(gym.Wrapper):
             obs_dict[cam + '_rgb'] for cam in self.env.cameras],
                                        axis=-1)
         obs['states'] = obs_dict['robot_qp']
+
+        obs['pretrained_representations'] = obs_dict['pretrained_representations']
 
         self.image_state_obs = obs
         return obs, reward, done, info
